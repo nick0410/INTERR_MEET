@@ -47,6 +47,29 @@ npx webpack serve --mode development
 
 The app will be available at `http://localhost:8080`.
 
+## Deploy
+
+### One-click deploy on Render (free)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nick0410/INTERR_MEET)
+
+### Docker
+
+```bash
+docker build -t interr-meet .
+docker run -p 3000:3000 interr-meet
+```
+
+### Manual (VPS / any server)
+
+```bash
+npm install
+npm run build        # production webpack build
+node server.js       # starts on port 3000
+```
+
+Set `JITSI_BACKEND` env var to point to your own Jitsi backend (default: `https://alpha.jitsi.net`).
+
 ## Security
 
 Interr implements End-to-End Encryption (E2EE) using the Olm/Megolm cryptographic protocol, ensuring that media is encrypted before it leaves your device.

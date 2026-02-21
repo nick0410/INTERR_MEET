@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: interr-meet
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: node ./scripts/prepareDevLibs.js && npx webpack --mode production --progress
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JITSI_BACKEND
+        value: https://alpha.jitsi.net
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=4096
