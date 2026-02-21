@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "node ./scripts/prepareDevLibs.js && npx webpack --mode production --no-stats"
+
+[deploy]
+startCommand = "node server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

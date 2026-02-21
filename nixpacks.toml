@@ -1,0 +1,15 @@
+[variables]
+NODE_OPTIONS = "--max-old-space-size=7168"
+NODE_ENV = "production"
+JITSI_BACKEND = "https://alpha.jitsi.net"
+PORT = "3000"
+
+[phases.build]
+cmds = [
+  "npm ci --legacy-peer-deps",
+  "node ./scripts/prepareDevLibs.js",
+  "npx webpack --mode production --no-stats"
+]
+
+[start]
+cmd = "node server.js"

@@ -1926,3 +1926,22 @@ if (enableJaaS) {
     config.dialInConfCodeUrl = 'https://conference-mapper.jitsi.net/v1/access';
     config.roomPasswordNumberOfDigits = 10; // skip re-adding it (do not remove comment)
 }
+
+// Production overrides — apply when not running on local dev server
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    var _backend = '@@JITSI_BACKEND@@';
+    if (!_backend || _backend.indexOf('@@') === 0) {
+        _backend = 'alpha.jitsi.net';
+    }
+    config.hosts = {
+        domain: _backend,
+        muc: 'conference.' + _backend,
+        focus: 'focus.' + _backend
+    };
+    config.bosh = 'https://' + _backend + '/http-bind';
+    config.websocket = 'wss://' + _backend + '/xmpp-websocket';
+    config.p2p = config.p2p || {};
+    config.p2p.stunServers = [
+        { urls: 'stun:meet-jit-si-turnrelay.jitsi.net:443' }
+    ];
+}

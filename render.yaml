@@ -4,7 +4,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: node ./scripts/prepareDevLibs.js && npx webpack --mode production --progress
+    buildCommand: node ./scripts/prepareDevLibs.js && npx webpack --mode production --no-stats
     startCommand: node server.js
     healthCheckPath: /
     envVars:
@@ -15,4 +15,4 @@ services:
       - key: JITSI_BACKEND
         value: https://alpha.jitsi.net
       - key: NODE_OPTIONS
-        value: --max-old-space-size=4096
+        value: --max-old-space-size=7168
