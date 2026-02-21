@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "framework": null,
+  "rewrites": [
+    { "source": "/http-bind(.*)", "destination": "https://alpha.jitsi.net/http-bind$1" },
+    { "source": "/xmpp-websocket(.*)", "destination": "https://alpha.jitsi.net/xmpp-websocket$1" },
+    { "source": "/colibri-ws/:path*", "destination": "https://alpha.jitsi.net/colibri-ws/:path*" },
+    { "source": "/((?!libs|css|images|fonts|sounds|lang|static|config\\.js|interface_config\\.js|pwa-worker\\.js|manifest\\.json).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/libs/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" }
+      ]
+    }
+  ]
+}
