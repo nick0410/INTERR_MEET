@@ -19,9 +19,11 @@ import { PARTICIPANT_JOINED, PARTICIPANT_LEFT, PARTICIPANT_UPDATED } from '../ba
 import {
     getLocalParticipant,
     getParticipantById,
-    getParticipantDisplayName
+    getParticipantDisplayName,
+    isLocalParticipantModerator
 } from '../base/participants/functions';
 import { IParticipant } from '../base/participants/types';
+import { kickParticipant } from '../base/participants/actions';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import StateListenerRegistry from '../base/redux/StateListenerRegistry';
 import { playSound, registerSound, unregisterSound } from '../base/sounds/actions';
@@ -85,6 +87,23 @@ import './subscriber';
  * message after we have received a private message in the last 20 seconds.
  */
 const PRIVACY_NOTICE_TIMEOUT = 20 * 1000;
+const MODERATION_ESCALATION_LIMIT = 3;
+const FLAGGED_CONTENT_PATTERNS = [
+    /\bterror(?:ist|ism)?\b/i,
+    /\bbomb\b/i,
+    /\bexplosive\b/i,
+    /\bkill\b/i,
+    /\bmurder\b/i,
+    /\brape\b/i,
+    /\bchild\s*(?:porn|abuse|sex)\b/i,
+    /\bdrug\s*deal(?:er|ing)?\b/i,
+    /\billegal\b/i,
+    /\bintimate\b/i,
+    /\bporn\b/i,
+    /\bsex(?:ual)?\b/i
+];
+const participantPolicyViolations = new Map<string, number>();
+const participantAutoModerated = new Set<string>();
 
 /**
  * Implements the middleware of the chat feature.
@@ -242,6 +261,12 @@ MiddlewareRegistry.register(store => next => action => {
     case PARTICIPANT_UPDATED: {
         if (action.type === PARTICIPANT_LEFT) {
             const { privateMessageRecipient } = store.getState()['features/chat'];
+            const leftParticipantId = action.participant?.id;
+
+            if (leftParticipantId) {
+                participantPolicyViolations.delete(leftParticipantId);
+                participantAutoModerated.delete(leftParticipantId);
+            }
 
             if (action.participant?.id === privateMessageRecipient?.id) {
                 store.dispatch(setPrivateMessageRecipient());
@@ -345,6 +370,8 @@ StateListenerRegistry.register(
     (conference, { dispatch, getState }, previousConference) => {
         if (conference !== previousConference) {
             // conference changed, left or failed...
+            participantPolicyViolations.clear();
+            participantAutoModerated.clear();
 
             if (getState()['features/chat'].isOpen) {
                 // Closes the chat if it's left open.
@@ -620,6 +647,7 @@ function _handleReceivedMessage({ dispatch, getState }: IStore,
     }
 
     const participant = getParticipantById(state, participantId);
+    const localParticipantIsModerator = isLocalParticipantModerator(state);
 
     const localParticipant = getLocalParticipant(getState);
     let _displayName;
@@ -659,6 +687,30 @@ function _handleReceivedMessage({ dispatch, getState }: IStore,
 
     dispatch(addMessage(newMessage));
 
+    if (_isPolicyViolationMessage(message, participant?.local)) {
+        const currentViolationCount = (participantPolicyViolations.get(participantId) || 0) + 1;
+
+        participantPolicyViolations.set(participantId, currentViolationCount);
+
+        if (localParticipantIsModerator && !participant?.local) {
+            if (currentViolationCount < MODERATION_ESCALATION_LIMIT) {
+                dispatch(showMessageNotification({
+                    title: `Moderation alert (${currentViolationCount}/${MODERATION_ESCALATION_LIMIT})`,
+                    description: `${_displayName} posted potentially illegal/inappropriate content. Review and remove participant.`,
+                    customActionNameKey: [ 'dialog.kickParticipantButton' ],
+                    customActionHandler: [ () => dispatch(kickParticipant(participantId)) ]
+                }, NOTIFICATION_TIMEOUT_TYPE.MEDIUM));
+            } else if (!participantAutoModerated.has(participantId)) {
+                participantAutoModerated.add(participantId);
+                dispatch(kickParticipant(participantId));
+                dispatch(showMessageNotification({
+                    title: 'Participant removed (3 violations)',
+                    description: `${_displayName} reached 3 moderation violations and was removed. For IP ban, block this user at server/prosody/firewall level.`
+                }, NOTIFICATION_TIMEOUT_TYPE.LONG));
+            }
+        }
+    }
+
     let notificationDisplayName = _displayName;
 
     // source can be 'token' or 'guest'. When it is 'guest', we append a guest indicator
@@ -690,6 +742,14 @@ function _handleReceivedMessage({ dispatch, getState }: IStore,
             ts: timestamp
         });
     }
+}
+
+function _isPolicyViolationMessage(message: string, isLocalMessage?: boolean) {
+    if (!message || isLocalMessage) {
+        return false;
+    }
+
+    return FLAGGED_CONTENT_PATTERNS.some(pattern => pattern.test(message));
 }
 
 /**

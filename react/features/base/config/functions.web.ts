@@ -80,8 +80,7 @@ export function _setDeeplinkingDefaults(deeplinking: IDeeplinkingConfig) {
 
     android.appName = android.appName || 'Interr';
     android.appScheme = android.appScheme || 'org.jitsi.meet';
-    android.downloadLink = android.downloadLink
-        || 'https://play.google.com/store/apps/details?id=org.jitsi.meet';
+    android.downloadLink = android.downloadLink || '';
     android.appPackage = android.appPackage || 'org.jitsi.meet';
     android.fDroidUrl = android.fDroidUrl || 'https://f-droid.org/packages/org.jitsi.meet/';
 }

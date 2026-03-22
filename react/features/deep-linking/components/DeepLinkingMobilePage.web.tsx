@@ -180,15 +180,19 @@ const DeepLinkingMobilePage: React.FC<WithTranslation> = ({ t }) => {
                         fullWidth = { true }
                         label = { t(`${_TNS}.joinInAppNew`) } />
                 </a>
-                <div className = { styles.labelDescription }>{ t(`${_TNS}.noMobileApp`) }</div>
-                <a
-                    { ...onOpenLinkProperties }
-                    className = { styles.linkWrapper }
-                    href = { generateDownloadURL() }
-                    onClick = { onDownloadApp }
-                    target = '_top'>
-                    <div className = { styles.linkLabel }>{ t(`${_TNS}.downloadMobileApp`) }</div>
-                </a>
+                {generateDownloadURL() ? (
+                    <>
+                        <div className = { styles.labelDescription }>{ t(`${_TNS}.noMobileApp`) }</div>
+                        <a
+                            { ...onOpenLinkProperties }
+                            className = { styles.linkWrapper }
+                            href = { generateDownloadURL() }
+                            onClick = { onDownloadApp }
+                            target = '_top'>
+                            <div className = { styles.linkLabel }>{ t(`${_TNS}.downloadMobileApp`) }</div>
+                        </a>
+                    </>
+                ) : null}
                 {isSupportedMobileBrowser() ? (
                     <div className = { styles.supportedBrowserContent }>
                         <div className = { styles.labelOr }>{ t(`${_TNS}.or`) }</div>
